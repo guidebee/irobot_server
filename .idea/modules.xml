@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/iRobot Server.iml" filepath="$PROJECT_DIR$/iRobot Server.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iRobot_Server.iml" filepath="$PROJECT_DIR$/.idea/modules/iRobot_Server.iml" group="iRobot_Server" />
     </modules>
   </component>
 </project>
