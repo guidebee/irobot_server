@@ -160,7 +160,7 @@ public class ScreenEncoder implements Device.RotationListener {
     }
 
     private static IBinder createDisplay() {
-        return SurfaceControl.createDisplay("scrcpy", true);
+        return SurfaceControl.createDisplay("irobot", true);
     }
 
     private static void configure(MediaCodec codec, MediaFormat format) {

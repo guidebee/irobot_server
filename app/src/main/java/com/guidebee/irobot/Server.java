@@ -9,13 +9,13 @@ import java.io.IOException;
 
 public final class Server {
 
-    private static final String SERVER_PATH = "/data/local/tmp/scrcpy-server.jar";
+    private static final String SERVER_PATH = "/data/local/tmp/irobot-server.jar";
 
     private Server() {
         // not instantiable
     }
 
-    private static void scrcpy(Options options) throws IOException {
+    private static void irobot(Options options) throws IOException {
         final Device device = new Device(options);
         boolean tunnelForward = options.isTunnelForward();
         try (DesktopConnection connection = DesktopConnection.open(device, tunnelForward)) {
@@ -143,7 +143,7 @@ public final class Server {
                 if (mce.getErrorCode() == 0xfffffc0e) {
                     Ln.e("The hardware encoder is not able to encode at the given definition.");
                     Ln.e("Try with a lower definition:");
-                    Ln.e("    scrcpy -m 1024");
+                    Ln.e("    irobot -m 1024");
                 }
             }
         }
@@ -160,6 +160,6 @@ public final class Server {
 
         unlinkSelf();
         Options options = createOptions(args);
-        scrcpy(options);
+        irobot(options);
     }
 }
