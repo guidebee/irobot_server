@@ -16,7 +16,7 @@ public final class IO {
     public static void writeFully(FileDescriptor fd, ByteBuffer from) throws IOException {
         // ByteBuffer position is not updated as expected by Os.write() on old Android versions, so
         // count the remaining bytes manually.
-        // See <https://github.com/Genymobile/irobot/issues/291>.
+        // See <https://github.com/Genymobile/scrcpy/issues/291>.
         int remaining = from.remaining();
         while (remaining > 0) {
             try {

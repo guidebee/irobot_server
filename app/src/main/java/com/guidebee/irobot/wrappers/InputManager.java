@@ -2,7 +2,6 @@ package com.guidebee.irobot.wrappers;
 
 import com.guidebee.irobot.Ln;
 
-import android.os.IInterface;
 import android.view.InputEvent;
 
 import java.lang.reflect.InvocationTargetException;
@@ -14,10 +13,12 @@ public final class InputManager {
     public static final int INJECT_INPUT_EVENT_MODE_WAIT_FOR_RESULT = 1;
     public static final int INJECT_INPUT_EVENT_MODE_WAIT_FOR_FINISH = 2;
 
-    private final IInterface manager;
+    private final android.hardware.input.InputManager manager;
     private Method injectInputEventMethod;
 
-    public InputManager(IInterface manager) {
+    private static Method setDisplayIdMethod;
+
+    public InputManager(android.hardware.input.InputManager manager) {
         this.manager = manager;
     }
 
@@ -34,6 +35,24 @@ public final class InputManager {
             return (boolean) method.invoke(manager, inputEvent, mode);
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             Ln.e("Could not invoke method", e);
+            return false;
+        }
+    }
+
+    private static Method getSetDisplayIdMethod() throws NoSuchMethodException {
+        if (setDisplayIdMethod == null) {
+            setDisplayIdMethod = InputEvent.class.getMethod("setDisplayId", int.class);
+        }
+        return setDisplayIdMethod;
+    }
+
+    public static boolean setDisplayId(InputEvent inputEvent, int displayId) {
+        try {
+            Method method = getSetDisplayIdMethod();
+            method.invoke(inputEvent, displayId);
+            return true;
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            Ln.e("Cannot associate a display id to the input event", e);
             return false;
         }
     }

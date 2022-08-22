@@ -87,7 +87,7 @@ public final class SurfaceControl {
     private static Method getGetBuiltInDisplayMethod() throws NoSuchMethodException {
         if (getBuiltInDisplayMethod == null) {
             // the method signature has changed in Android Q
-            // <https://github.com/Genymobile/irobot/issues/586>
+            // <https://github.com/Genymobile/scrcpy/issues/586>
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 getBuiltInDisplayMethod = CLASS.getMethod("getBuiltInDisplay", int.class);
             } else {
@@ -121,12 +121,14 @@ public final class SurfaceControl {
         return setDisplayPowerModeMethod;
     }
 
-    public static void setDisplayPowerMode(IBinder displayToken, int mode) {
+    public static boolean setDisplayPowerMode(IBinder displayToken, int mode) {
         try {
             Method method = getSetDisplayPowerModeMethod();
             method.invoke(null, displayToken, mode);
+            return true;
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             Ln.e("Could not invoke method", e);
+            return false;
         }
     }
 

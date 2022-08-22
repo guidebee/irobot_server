@@ -8,21 +8,39 @@ import android.util.Log;
  */
 public final class Ln {
 
-    private static final String TAG = "irobot";
+    private static final String TAG = "scrcpy";
     private static final String PREFIX = "[server] ";
 
     enum Level {
-        DEBUG, INFO, WARN, ERROR
+        VERBOSE, DEBUG, INFO, WARN, ERROR
     }
 
-    private static final Level THRESHOLD = BuildConfig.DEBUG ? Level.DEBUG : Level.INFO;
+    private static Level threshold = Level.INFO;
 
     private Ln() {
         // not instantiable
     }
 
+    /**
+     * Initialize the log level.
+     * <p>
+     * Must be called before starting any new thread.
+     *
+     * @param level the log level
+     */
+    public static void initLogLevel(Level level) {
+        threshold = level;
+    }
+
     public static boolean isEnabled(Level level) {
-        return level.ordinal() >= THRESHOLD.ordinal();
+        return level.ordinal() >= threshold.ordinal();
+    }
+
+    public static void v(String message) {
+        if (isEnabled(Level.VERBOSE)) {
+            Log.v(TAG, message);
+            System.out.println(PREFIX + "VERBOSE: " + message);
+        }
     }
 
     public static void d(String message) {
@@ -39,11 +57,18 @@ public final class Ln {
         }
     }
 
-    public static void w(String message) {
+    public static void w(String message, Throwable throwable) {
         if (isEnabled(Level.WARN)) {
-            Log.w(TAG, message);
+            Log.w(TAG, message, throwable);
             System.out.println(PREFIX + "WARN: " + message);
+            if (throwable != null) {
+                throwable.printStackTrace();
+            }
         }
+    }
+
+    public static void w(String message) {
+        w(message, null);
     }
 
     public static void e(String message, Throwable throwable) {
