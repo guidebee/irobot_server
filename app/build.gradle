@@ -17,6 +17,9 @@ android {
         }
     }
     namespace 'com.guidebee.irobot'
+    buildFeatures {
+        aidl true
+    }
 }
 
 
