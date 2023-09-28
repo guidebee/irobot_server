@@ -8,7 +8,7 @@ import android.util.Log;
  */
 public final class Ln {
 
-    private static final String TAG = "scrcpy";
+    private static final String TAG = "irobot";
     private static final String PREFIX = "[server] ";
 
     enum Level {

@@ -268,7 +268,7 @@ public class Controller implements AsyncProcessor {
          *   - all button released (including the last one) must generate ACTION_BUTTON_RELEASE;
          *   - the last button released must in addition generate ACTION_UP.
          *
-         * Otherwise, Chrome does not work properly: <https://github.com/Genymobile/scrcpy/issues/3635>
+         * Otherwise, Chrome does not work properly: <https://github.com/Genymobile/irobot/issues/3635>
          */
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && source == InputDevice.SOURCE_MOUSE) {
             if (action == MotionEvent.ACTION_DOWN) {

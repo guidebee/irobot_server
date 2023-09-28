@@ -38,21 +38,21 @@ public final class Workarounds {
 
         if (Build.BRAND.equalsIgnoreCase("meizu")) {
             // Workarounds must be applied for Meizu phones:
-            //  - <https://github.com/Genymobile/scrcpy/issues/240>
-            //  - <https://github.com/Genymobile/scrcpy/issues/365>
-            //  - <https://github.com/Genymobile/scrcpy/issues/2656>
+            //  - <https://github.com/Genymobile/irobot/issues/240>
+            //  - <https://github.com/Genymobile/irobot/issues/365>
+            //  - <https://github.com/Genymobile/irobot/issues/2656>
             //
             // But only apply when strictly necessary, since workarounds can cause other issues:
-            //  - <https://github.com/Genymobile/scrcpy/issues/940>
-            //  - <https://github.com/Genymobile/scrcpy/issues/994>
+            //  - <https://github.com/Genymobile/irobot/issues/940>
+            //  - <https://github.com/Genymobile/irobot/issues/994>
             mustFillAppInfo = true;
         } else if (Build.BRAND.equalsIgnoreCase("honor")) {
             // More workarounds must be applied for Honor devices:
-            //  - <https://github.com/Genymobile/scrcpy/issues/4015>
+            //  - <https://github.com/Genymobile/irobot/issues/4015>
             //
             // The system context must not be set for all devices, because it would cause other problems:
-            //  - <https://github.com/Genymobile/scrcpy/issues/4015#issuecomment-1595382142>
-            //  - <https://github.com/Genymobile/scrcpy/issues/3805#issuecomment-1596148031>
+            //  - <https://github.com/Genymobile/irobot/issues/4015#issuecomment-1595382142>
+            //  - <https://github.com/Genymobile/irobot/issues/3805#issuecomment-1596148031>
             mustFillAppInfo = true;
             mustFillBaseContext = true;
             mustFillAppContext = true;
@@ -80,12 +80,12 @@ public final class Workarounds {
     private static void prepareMainLooper() {
         // Some devices internally create a Handler when creating an input Surface, causing an exception:
         //   "Can't create handler inside thread that has not called Looper.prepare()"
-        // <https://github.com/Genymobile/scrcpy/issues/240>
+        // <https://github.com/Genymobile/irobot/issues/240>
         //
         // Use Looper.prepareMainLooper() instead of Looper.prepare() to avoid a NullPointerException:
         //   "Attempt to read from field 'android.os.MessageQueue android.os.Looper.mQueue'
         //    on a null object reference"
-        // <https://github.com/Genymobile/scrcpy/issues/921>
+        // <https://github.com/Genymobile/irobot/issues/921>
         Looper.prepareMainLooper();
     }
 

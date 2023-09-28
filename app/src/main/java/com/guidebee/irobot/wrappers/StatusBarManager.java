@@ -25,7 +25,7 @@ public class StatusBarManager {
             try {
                 expandNotificationsPanelMethod = manager.getClass().getMethod("expandNotificationsPanel");
             } catch (NoSuchMethodException e) {
-                // Custom version for custom vendor ROM: <https://github.com/Genymobile/scrcpy/issues/2551>
+                // Custom version for custom vendor ROM: <https://github.com/Genymobile/irobot/issues/2551>
                 expandNotificationsPanelMethod = manager.getClass().getMethod("expandNotificationsPanel", int.class);
                 expandNotificationPanelMethodCustomVersion = true;
             }

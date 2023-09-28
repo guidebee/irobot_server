@@ -39,7 +39,7 @@ public class Options {
     private boolean listEncoders;
     private boolean listDisplays;
 
-    // Options not used by the scrcpy client, but useful to use scrcpy-server directly
+    // Options not used by the irobot client, but useful to use irobot-server directly
     private boolean sendDeviceMeta = true; // send device name and size
     private boolean sendFrameMeta = true; // send PTS so that the client may record properly
     private boolean sendDummyByte = true; // write a byte on start to detect connection issues

@@ -15,7 +15,7 @@ public final class DesktopConnection implements Closeable {
 
     private static final int DEVICE_NAME_FIELD_LENGTH = 64;
 
-    private static final String SOCKET_NAME_PREFIX = "scrcpy";
+    private static final String SOCKET_NAME_PREFIX = "irobot";
 
     private final LocalSocket videoSocket;
     private final FileDescriptor videoFd;
@@ -53,7 +53,7 @@ public final class DesktopConnection implements Closeable {
 
     private static String getSocketName(int scid) {
         if (scid == -1) {
-            // If no SCID is set, use "scrcpy" to simplify using scrcpy-server alone
+            // If no SCID is set, use "irobot" to simplify using irobot-server alone
             return SOCKET_NAME_PREFIX;
         }
 

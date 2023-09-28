@@ -8,13 +8,13 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Handle the cleanup of scrcpy, even if the main process is killed.
+ * Handle the cleanup of irobot, even if the main process is killed.
  * <p>
- * This is useful to restore some state when scrcpy is closed, even on device disconnection (which kills the scrcpy process).
+ * This is useful to restore some state when irobot is closed, even on device disconnection (which kills the irobot process).
  */
 public final class CleanUp {
 
-    public static final String SERVER_PATH = "/data/local/tmp/scrcpy-server.jar";
+    public static final String SERVER_PATH = "/data/local/tmp/irobot-server.jar";
 
     // A simple struct to be passed from the main process to the cleanup process
     public static class Config implements Parcelable {
@@ -126,7 +126,7 @@ public final class CleanUp {
         if (config.hasWork()) {
             startProcess(config);
         } else {
-            // There is no additional clean up to do when scrcpy dies
+            // There is no additional clean up to do when irobot dies
             unlinkSelf();
         }
     }

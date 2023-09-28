@@ -67,9 +67,9 @@ public final class AudioCapture {
     private static void startWorkaroundAndroid11() {
         // Android 11 requires Apps to be at foreground to record audio.
         // Normally, each App has its own user ID, so Android checks whether the requesting App has the user ID that's at the foreground.
-        // But scrcpy server is NOT an App, it's a Java application started from Android shell, so it has the same user ID (2000) with Android
+        // But irobot server is NOT an App, it's a Java application started from Android shell, so it has the same user ID (2000) with Android
         // shell ("com.android.shell").
-        // If there is an Activity from Android shell running at foreground, then the permission system will believe scrcpy is also in the
+        // If there is an Activity from Android shell running at foreground, then the permission system will believe irobot is also in the
         // foreground.
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -93,7 +93,7 @@ public final class AudioCapture {
                 if (attempts == 0) {
                     Ln.e("Failed to start audio capture");
                     Ln.e("On Android 11, audio capture must be started in the foreground, make sure that the device is unlocked when starting "
-                            + "scrcpy.");
+                            + "irobot.");
                     throw new AudioCaptureForegroundException();
                 } else {
                     Ln.d("Failed to start audio capture, retrying...");
@@ -107,8 +107,8 @@ public final class AudioCapture {
             recorder = createAudioRecord(audioSource);
         } catch (NullPointerException e) {
             // Creating an AudioRecord using an AudioRecord.Builder does not work on Vivo phones:
-            // - <https://github.com/Genymobile/scrcpy/issues/3805>
-            // - <https://github.com/Genymobile/scrcpy/pull/3862>
+            // - <https://github.com/Genymobile/irobot/issues/3805>
+            // - <https://github.com/Genymobile/irobot/pull/3862>
             recorder = Workarounds.createAudioRecord(audioSource, SAMPLE_RATE, CHANNEL_CONFIG, CHANNELS, CHANNEL_MASK, ENCODING);
         }
         recorder.startRecording();

@@ -86,7 +86,7 @@ public final class Server {
         }
     }
 
-    private static void scrcpy(Options options) throws IOException, ConfigurationException {
+    private static void irobot(Options options) throws IOException, ConfigurationException {
         Ln.i("Device: [" + Build.MANUFACTURER + "] " + Build.BRAND + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
         final Device device = new Device(options);
 
@@ -196,7 +196,7 @@ public final class Server {
         }
 
         try {
-            scrcpy(options);
+            irobot(options);
         } catch (ConfigurationException e) {
             // Do not print stack trace, a user-friendly error-message has already been logged
         }

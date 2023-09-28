@@ -225,7 +225,7 @@ public final class AudioEncoder implements AsyncProcessor {
 
             waitEnded();
         } catch (ConfigurationException e) {
-            // Notify the error to make scrcpy exit
+            // Notify the error to make irobot exit
             streamer.writeDisableStream(true);
             throw e;
         } catch (Throwable e) {

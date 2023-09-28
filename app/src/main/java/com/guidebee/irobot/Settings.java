@@ -35,7 +35,7 @@ public final class Settings {
 
     public static String getValue(String table, String key) throws SettingsException {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-            // on Android >= 12, it always fails: <https://github.com/Genymobile/scrcpy/issues/2788>
+            // on Android >= 12, it always fails: <https://github.com/Genymobile/irobot/issues/2788>
             try (ContentProvider provider = ServiceManager.getActivityManager().createSettingsProvider()) {
                 return provider.getValue(table, key);
             } catch (SettingsException e) {
@@ -48,7 +48,7 @@ public final class Settings {
 
     public static void putValue(String table, String key, String value) throws SettingsException {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-            // on Android >= 12, it always fails: <https://github.com/Genymobile/scrcpy/issues/2788>
+            // on Android >= 12, it always fails: <https://github.com/Genymobile/irobot/issues/2788>
             try (ContentProvider provider = ServiceManager.getActivityManager().createSettingsProvider()) {
                 provider.putValue(table, key, value);
             } catch (SettingsException e) {
@@ -61,7 +61,7 @@ public final class Settings {
 
     public static String getAndPutValue(String table, String key, String value) throws SettingsException {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-            // on Android >= 12, it always fails: <https://github.com/Genymobile/scrcpy/issues/2788>
+            // on Android >= 12, it always fails: <https://github.com/Genymobile/irobot/issues/2788>
             try (ContentProvider provider = ServiceManager.getActivityManager().createSettingsProvider()) {
                 String oldValue = provider.getValue(table, key);
                 if (!value.equals(oldValue)) {

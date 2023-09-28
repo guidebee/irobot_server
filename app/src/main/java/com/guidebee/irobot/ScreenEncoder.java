@@ -248,7 +248,7 @@ public class ScreenEncoder implements Device.RotationListener, Device.FoldListen
         if (maxFps > 0) {
             // The key existed privately before Android 10:
             // <https://android.googlesource.com/platform/frameworks/base/+/625f0aad9f7a259b6881006ad8710adce57d1384%5E%21/>
-            // <https://github.com/Genymobile/scrcpy/issues/488#issuecomment-567321437>
+            // <https://github.com/Genymobile/irobot/issues/488#issuecomment-567321437>
             format.setFloat(KEY_MAX_FPS_TO_ENCODER, maxFps);
         }
 
@@ -269,7 +269,7 @@ public class ScreenEncoder implements Device.RotationListener, Device.FoldListen
         // On Android 12 preview, SDK_INT is still R (not S), but CODENAME is "S".
         boolean secure = Build.VERSION.SDK_INT < Build.VERSION_CODES.R || (Build.VERSION.SDK_INT == Build.VERSION_CODES.R && !"S"
                 .equals(Build.VERSION.CODENAME));
-        return SurfaceControl.createDisplay("scrcpy", secure);
+        return SurfaceControl.createDisplay("irobot", secure);
     }
 
     private static void setDisplaySurface(IBinder display, Surface surface, int orientation, Rect deviceRect, Rect displayRect, int layerStack) {
@@ -287,7 +287,7 @@ public class ScreenEncoder implements Device.RotationListener, Device.FoldListen
     public void start(TerminationListener listener) {
         thread = new Thread(() -> {
             // Some devices (Meizu) deadlock if the video encoding thread has no Looper
-            // <https://github.com/Genymobile/scrcpy/issues/4143>
+            // <https://github.com/Genymobile/irobot/issues/4143>
             Looper.prepare();
 
             try {

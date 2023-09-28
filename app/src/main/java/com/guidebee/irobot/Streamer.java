@@ -52,8 +52,8 @@ public final class Streamer {
 
     public void writeDisableStream(boolean error) throws IOException {
         // Writing a specific code as codec-id means that the device disables the stream
-        //   code 0: it explicitly disables the stream (because it could not capture audio), scrcpy should continue mirroring video only
-        //   code 1: a configuration error occurred, scrcpy must be stopped
+        //   code 0: it explicitly disables the stream (because it could not capture audio), irobot should continue mirroring video only
+        //   code 1: a configuration error occurred, irobot must be stopped
         byte[] code = new byte[4];
         if (error) {
             code[3] = 1;
