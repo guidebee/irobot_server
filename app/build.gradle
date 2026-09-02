@@ -1,31 +1,32 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
+    namespace = 'com.guidebee.irobot'
+    compileSdk = 36
     defaultConfig {
-        applicationId "com.guidebee.irobot"
+        applicationId = "com.guidebee.irobot"
         minSdkVersion 21
-        targetSdkVersion 33
-        versionCode 14
+        targetSdkVersion 36
+        versionCode 15
         versionName "1.0.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
     buildFeatures {
-        aidl true
+        buildConfig = true
+        aidl = true
     }
-    namespace 'com.guidebee.irobot'
+    lint {
+        disable 'UseRequiresApi'
+    }
 }
 
-
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 apply from: "$project.rootDir/config/android-checkstyle.gradle"

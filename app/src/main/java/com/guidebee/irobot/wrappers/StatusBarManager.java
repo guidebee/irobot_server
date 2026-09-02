@@ -1,13 +1,12 @@
 package com.guidebee.irobot.wrappers;
 
-import com.guidebee.irobot.Ln;
+import com.guidebee.irobot.util.Ln;
 
 import android.os.IInterface;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class StatusBarManager {
+public final class StatusBarManager {
 
     private final IInterface manager;
     private Method expandNotificationsPanelMethod;
@@ -16,7 +15,12 @@ public class StatusBarManager {
     private boolean expandSettingsPanelMethodNewVersion = true;
     private Method collapsePanelsMethod;
 
-    public StatusBarManager(IInterface manager) {
+    static StatusBarManager create() {
+        IInterface manager = ServiceManager.getService("statusbar", "com.android.internal.statusbar.IStatusBarService");
+        return new StatusBarManager(manager);
+    }
+
+    private StatusBarManager(IInterface manager) {
         this.manager = manager;
     }
 
@@ -25,7 +29,7 @@ public class StatusBarManager {
             try {
                 expandNotificationsPanelMethod = manager.getClass().getMethod("expandNotificationsPanel");
             } catch (NoSuchMethodException e) {
-                // Custom version for custom vendor ROM: <https://github.com/Genymobile/irobot/issues/2551>
+                // Custom version for custom vendor ROM: <https://github.com/guidebee/irobot/issues/2551>
                 expandNotificationsPanelMethod = manager.getClass().getMethod("expandNotificationsPanel", int.class);
                 expandNotificationPanelMethodCustomVersion = true;
             }
@@ -62,7 +66,7 @@ public class StatusBarManager {
             } else {
                 method.invoke(manager);
             }
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+        } catch (ReflectiveOperationException e) {
             Ln.e("Could not invoke method", e);
         }
     }
@@ -77,7 +81,7 @@ public class StatusBarManager {
                 // old version
                 method.invoke(manager);
             }
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+        } catch (ReflectiveOperationException e) {
             Ln.e("Could not invoke method", e);
         }
     }
@@ -86,7 +90,7 @@ public class StatusBarManager {
         try {
             Method method = getCollapsePanelsMethod();
             method.invoke(manager);
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+        } catch (ReflectiveOperationException e) {
             Ln.e("Could not invoke method", e);
         }
     }
