@@ -1,13 +1,49 @@
 package com.guidebee.irobot;
 
-import android.os.BatteryManager;
-import android.os.Build;
+import com.guidebee.irobot.audio.AudioCapture;
+import com.guidebee.irobot.audio.AudioCodec;
+import com.guidebee.irobot.audio.AudioDirectCapture;
+import com.guidebee.irobot.audio.AudioEncoder;
+import com.guidebee.irobot.audio.AudioPlaybackCapture;
+import com.guidebee.irobot.audio.AudioRawRecorder;
+import com.guidebee.irobot.audio.AudioSource;
+import com.guidebee.irobot.control.ControlChannel;
+import com.guidebee.irobot.control.Controller;
+import com.guidebee.irobot.device.DesktopConnection;
+import com.guidebee.irobot.device.Device;
+import com.guidebee.irobot.device.Streamer;
+import com.guidebee.irobot.model.ConfigurationException;
+import com.guidebee.irobot.model.NewDisplay;
+import com.guidebee.irobot.opengl.OpenGLRunner;
+import com.guidebee.irobot.util.Ln;
+import com.guidebee.irobot.util.LogUtils;
+import com.guidebee.irobot.video.CameraCapture;
+import com.guidebee.irobot.video.NewDisplayCapture;
+import com.guidebee.irobot.video.ScreenCapture;
+import com.guidebee.irobot.video.SurfaceCapture;
+import com.guidebee.irobot.video.SurfaceEncoder;
+import com.guidebee.irobot.video.VideoSource;
 
+import android.annotation.SuppressLint;
+import android.os.Build;
+import android.os.Looper;
+import android.system.Os;
+
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class Server {
+
+    public static final String SERVER_PATH;
+
+    static {
+        String[] classPaths = System.getProperty("java.class.path").split(File.pathSeparator);
+        // By convention, scrcpy is always executed with the absolute path of scrcpy-server.jar as the first item in the classpath
+        SERVER_PATH = classPaths[0];
+    }
 
     private static class Completion {
         private int running;
@@ -23,17 +59,7 @@ public final class Server {
                 this.fatalError = true;
             }
             if (running == 0 || this.fatalError) {
-                notify();
-            }
-        }
-
-        synchronized void await() {
-            try {
-                while (running > 0 && !fatalError) {
-                    wait();
-                }
-            } catch (InterruptedException e) {
-                // ignore
+                Looper.getMainLooper().quitSafely();
             }
         }
     }
@@ -42,55 +68,28 @@ public final class Server {
         // not instantiable
     }
 
-    private static void initAndCleanUp(Options options) {
-        boolean mustDisableShowTouchesOnCleanUp = false;
-        int restoreStayOn = -1;
-        boolean restoreNormalPowerMode = options.getControl(); // only restore power mode if control is enabled
-        if (options.getShowTouches() || options.getStayAwake()) {
-            if (options.getShowTouches()) {
-                try {
-                    String oldValue = Settings.getAndPutValue(Settings.TABLE_SYSTEM, "show_touches", "1");
-                    // If "show touches" was disabled, it must be disabled back on clean up
-                    mustDisableShowTouchesOnCleanUp = !"1".equals(oldValue);
-                } catch (SettingsException e) {
-                    Ln.e("Could not change \"show_touches\"", e);
-                }
-            }
+    private static void scrcpy(Options options) throws IOException, ConfigurationException {
+        if (Build.VERSION.SDK_INT < AndroidVersions.API_31_ANDROID_12 && options.getVideoSource() == VideoSource.CAMERA) {
+            Ln.e("Camera mirroring is not supported before Android 12");
+            throw new ConfigurationException("Camera mirroring is not supported");
+        }
 
-            if (options.getStayAwake()) {
-                int stayOn = BatteryManager.BATTERY_PLUGGED_AC | BatteryManager.BATTERY_PLUGGED_USB | BatteryManager.BATTERY_PLUGGED_WIRELESS;
-                try {
-                    String oldValue = Settings.getAndPutValue(Settings.TABLE_GLOBAL, "stay_on_while_plugged_in", String.valueOf(stayOn));
-                    try {
-                        restoreStayOn = Integer.parseInt(oldValue);
-                        if (restoreStayOn == stayOn) {
-                            // No need to restore
-                            restoreStayOn = -1;
-                        }
-                    } catch (NumberFormatException e) {
-                        restoreStayOn = 0;
-                    }
-                } catch (SettingsException e) {
-                    Ln.e("Could not change \"stay_on_while_plugged_in\"", e);
-                }
+        if (Build.VERSION.SDK_INT < AndroidVersions.API_29_ANDROID_10) {
+            if (options.getNewDisplay() != null) {
+                Ln.e("New virtual display is not supported before Android 10");
+                throw new ConfigurationException("New virtual display is not supported");
+            }
+            if (options.getDisplayImePolicy() != -1) {
+                Ln.e("Display IME policy is not supported before Android 10");
+                throw new ConfigurationException("Display IME policy is not supported");
             }
         }
+
+        CleanUp cleanUp = null;
 
         if (options.getCleanup()) {
-            try {
-                CleanUp.configure(options.getDisplayId(), restoreStayOn, mustDisableShowTouchesOnCleanUp, restoreNormalPowerMode,
-                        options.getPowerOffScreenOnClose());
-            } catch (IOException e) {
-                Ln.e("Could not configure cleanup", e);
-            }
+            cleanUp = CleanUp.start(options);
         }
-    }
-
-    private static void irobot(Options options) throws IOException, ConfigurationException {
-        Ln.i("Device: [" + Build.MANUFACTURER + "] " + Build.BRAND + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
-        final Device device = new Device(options);
-
-        Thread initThread = startInitThread(options);
 
         int scid = options.getScid();
         boolean tunnelForward = options.isTunnelForward();
@@ -99,7 +98,7 @@ public final class Server {
         boolean audio = options.getAudio();
         boolean sendDummyByte = options.getSendDummyByte();
 
-        Workarounds.apply(audio);
+        Workarounds.apply();
 
         List<AsyncProcessor> asyncProcessors = new ArrayList<>();
 
@@ -109,32 +108,55 @@ public final class Server {
                 connection.sendDeviceMeta(Device.getDeviceName());
             }
 
+            Controller controller = null;
+
             if (control) {
-                Controller controller = new Controller(device, connection, options.getClipboardAutosync(), options.getPowerOn());
-                device.setClipboardListener(text -> controller.getSender().pushClipboardText(text));
+                ControlChannel controlChannel = connection.getControlChannel();
+                controller = new Controller(controlChannel, cleanUp, options);
                 asyncProcessors.add(controller);
             }
 
             if (audio) {
                 AudioCodec audioCodec = options.getAudioCodec();
-                AudioCapture audioCapture = new AudioCapture(options.getAudioSource());
-                Streamer audioStreamer = new Streamer(connection.getAudioFd(), audioCodec, options.getSendCodecMeta(), options.getSendFrameMeta());
+                AudioSource audioSource = options.getAudioSource();
+                AudioCapture audioCapture;
+                if (audioSource.isDirect()) {
+                    audioCapture = new AudioDirectCapture(audioSource);
+                } else {
+                    audioCapture = new AudioPlaybackCapture(options.getAudioDup());
+                }
+
+                Streamer audioStreamer = new Streamer(connection.getAudioFd(), audioCodec, options.getSendStreamMeta(), options.getSendFrameMeta());
                 AsyncProcessor audioRecorder;
                 if (audioCodec == AudioCodec.RAW) {
                     audioRecorder = new AudioRawRecorder(audioCapture, audioStreamer);
                 } else {
-                    audioRecorder = new AudioEncoder(audioCapture, audioStreamer, options.getAudioBitRate(), options.getAudioCodecOptions(),
-                            options.getAudioEncoder());
+                    audioRecorder = new AudioEncoder(audioCapture, audioStreamer, options);
                 }
                 asyncProcessors.add(audioRecorder);
             }
 
             if (video) {
-                Streamer videoStreamer = new Streamer(connection.getVideoFd(), options.getVideoCodec(), options.getSendCodecMeta(),
+                Streamer videoStreamer = new Streamer(connection.getVideoFd(), options.getVideoCodec(), options.getSendStreamMeta(),
                         options.getSendFrameMeta());
-                ScreenEncoder screenEncoder = new ScreenEncoder(device, videoStreamer, options.getVideoBitRate(), options.getMaxFps(),
-                        options.getVideoCodecOptions(), options.getVideoEncoder(), options.getDownsizeOnError());
-                asyncProcessors.add(screenEncoder);
+                SurfaceCapture surfaceCapture;
+                if (options.getVideoSource() == VideoSource.DISPLAY) {
+                    NewDisplay newDisplay = options.getNewDisplay();
+                    if (newDisplay != null) {
+                        surfaceCapture = new NewDisplayCapture(controller, options);
+                    } else {
+                        assert options.getDisplayId() != Device.DISPLAY_ID_NONE;
+                        surfaceCapture = new ScreenCapture(controller, options);
+                    }
+                } else {
+                    surfaceCapture = new CameraCapture(options);
+                }
+                SurfaceEncoder surfaceEncoder = new SurfaceEncoder(surfaceCapture, videoStreamer, options);
+                asyncProcessors.add(surfaceEncoder);
+
+                if (controller != null) {
+                    controller.setSurfaceCapture(surfaceCapture);
+                }
             }
 
             Completion completion = new Completion(asyncProcessors.size());
@@ -144,18 +166,26 @@ public final class Server {
                 });
             }
 
-            completion.await();
+            Looper.loop(); // interrupted by the Completion implementation
         } finally {
-            initThread.interrupt();
+            if (cleanUp != null) {
+                cleanUp.interrupt();
+            }
             for (AsyncProcessor asyncProcessor : asyncProcessors) {
                 asyncProcessor.stop();
             }
 
+            connection.shutdown();
+
             try {
-                initThread.join();
+                if (cleanUp != null) {
+                    cleanUp.join();
+                }
                 for (AsyncProcessor asyncProcessor : asyncProcessors) {
                     asyncProcessor.join();
                 }
+
+                OpenGLRunner.shutdown();
             } catch (InterruptedException e) {
                 // ignore
             }
@@ -164,22 +194,57 @@ public final class Server {
         }
     }
 
-    private static Thread startInitThread(final Options options) {
-        Thread thread = new Thread(() -> initAndCleanUp(options), "init-cleanup");
-        thread.start();
-        return thread;
+    private static void prepareMainLooper() {
+        // Like Looper.prepareMainLooper(), but with quitAllowed set to true
+        Looper.prepare();
+        synchronized (Looper.class) {
+            try {
+                @SuppressLint("DiscouragedPrivateApi")
+                Field field = Looper.class.getDeclaredField("sMainLooper");
+                field.setAccessible(true);
+                field.set(null, Looper.myLooper());
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
+        }
     }
 
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) {
+        int status = 0;
+        try {
+            internalMain(args);
+        } catch (Throwable t) {
+            Ln.e(t.getMessage(), t);
+            status = 1;
+        } finally {
+            // By default, the Java process exits when all non-daemon threads are terminated.
+            // The Android SDK might start some non-daemon threads internally, preventing the scrcpy server to exit.
+            // So force the process to exit explicitly.
+            System.exit(status);
+        }
+    }
+
+    private static void internalMain(String... args) throws Exception {
+        Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             Ln.e("Exception on thread " + t, e);
+            if (defaultHandler != null) {
+                defaultHandler.uncaughtException(t, e);
+            }
         });
+
+        dropRootPrivileges();
+
+        prepareMainLooper();
 
         Options options = Options.parse(args);
 
+        Ln.disableSystemStreams();
         Ln.initLogLevel(options.getLogLevel());
 
-        if (options.getListEncoders() || options.getListDisplays()) {
+        Ln.i("Device: [" + Build.MANUFACTURER + "] " + Build.BRAND + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
+
+        if (options.getList()) {
             if (options.getCleanup()) {
                 CleanUp.unlinkSelf();
             }
@@ -191,14 +256,36 @@ public final class Server {
             if (options.getListDisplays()) {
                 Ln.i(LogUtils.buildDisplayListMessage());
             }
+            if (options.getListCameras() || options.getListCameraSizes()) {
+                Workarounds.apply();
+                Ln.i(LogUtils.buildCameraListMessage(options.getListCameraSizes()));
+            }
+            if (options.getListApps()) {
+                Workarounds.apply();
+                Ln.i("Processing Android apps... (this may take some time)");
+                Ln.i(LogUtils.buildAppListMessage());
+            }
             // Just print the requested data, do not mirror
             return;
         }
 
         try {
-            irobot(options);
+            scrcpy(options);
         } catch (ConfigurationException e) {
             // Do not print stack trace, a user-friendly error-message has already been logged
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void dropRootPrivileges() {
+        try {
+            if (Os.getuid() == 0) {
+                // Copy-paste does not work with root user
+                // <https://github.com/guidebee/irobot/issues/6224>
+                Os.setuid(2000);
+            }
+        } catch (Exception e) {
+            Ln.w("Cannot set UID", e);
         }
     }
 }
